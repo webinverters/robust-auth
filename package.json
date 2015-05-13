@@ -35,5 +35,9 @@
     "sinon": "^1.14.1",
     "sinon-as-promised": "^2.0.3",
     "sinon-chai": "^2.6.0"
+  },
+  "dependencies": {
+    "jwt-simple": "^0.3.0",
+    "lodash": "^3.8.0"
   }
 }

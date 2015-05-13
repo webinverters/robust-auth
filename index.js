@@ -9,4 +9,4 @@
  * @license Apache-2.0
  */
 
-require('./src/node-quickstart.js');
+module.exports = require('./src/robust-auth.js');
