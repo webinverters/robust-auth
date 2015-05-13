@@ -26,10 +26,6 @@ module.exports = function construct(config, dal, encryption, logger) {
   var m = {};
 
   encryption = encryption || require('jwt-simple');
-  var defaultRoutesNotRequiringAuthentication = {
-    '/token': true,
-    '/user': true
-  };
 
   config = config ? _.cloneDeep(config) : {};
   config = _.defaults(config, {
@@ -37,7 +33,7 @@ module.exports = function construct(config, dal, encryption, logger) {
     attachEndpoints: true,
     attachMiddleware: true,
     secret: null,  // purposely do not set a default so the security is not weakened by user's forgetting to change the default.
-    routesNotRequiringAuthentication: defaultRoutesNotRequiringAuthentication,
+    authenticatedRoutes: {},
     tokenExpireDurationSecs: 60*60*24*1 // one day by default.
   });
 
@@ -56,7 +52,9 @@ module.exports = function construct(config, dal, encryption, logger) {
     return m.authenticate(req.body.key, req.body.secret)
       .then(function(token) {
         if (token) {
-          res.send({token: token});
+          res.send({
+            token: token
+          });
         } else {
           res.status(401).send();
         }
@@ -112,6 +110,18 @@ module.exports = function construct(config, dal, encryption, logger) {
       });
   };
 
+
+  m.isPublicRoute = function(path) {
+    _.each(config.authenticatedRoutes, function(val, key) {
+      var partialPath = path.substr(0,key.length);
+      if (partialPath == key) {
+        return false;
+      }
+      logger.log('partialPath', partialPath, '!=', key);
+    });
+    return true;
+  };
+
   /**
    * Detects if the user is sending an authenticated request.  If it is, it will set req.user and req.session.user details.
    * @param req
@@ -140,10 +150,17 @@ module.exports = function construct(config, dal, encryption, logger) {
         req.session.user = req.user = null;
       }
     } else {
-      if (config.routesNotRequiringAuthentication[req.path])
+      //logger.debug('Checking permissions to ', req.path);
+      //if (config.routesNotRequiringAuthentication[req.path]) next();
+      //else if (m.isPublicRoute(req.path)) next();
+      //else {
+      //  logger.debug('Disallowing request to:', req.path);
+      //  res.status(401).send();
+      //}
+      if (config.authenticatedRoutes[req.path] || !m.isPublicRoute(req.path))
+        res.status(401).send();
+      else
         next();
-
-      res.status(401).send();
     }
   }
 
