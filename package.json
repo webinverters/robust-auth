@@ -1,6 +1,6 @@
 {
-  "name": "lib-base",
-  "version": "0.0.2",
+  "name": "robust-auth",
+  "version": "0.0.3",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:webinverters/lib-base.git"
+    "url": "git@github.com:webinverters/robust-auth.git"
   },
   "author": "Justin Mooser",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/webinverters/lib-base/issues"
+    "url": "https://github.com/webinverters/robust-auth/issues"
   },
-  "homepage": "https://github.com/webinverters/lib-base",
+  "homepage": "https://github.com/webinverters/robust-auth",
   "devDependencies": {
     "chai": "^1.x.x",
     "chai-as-promised": "^4.1.1",
