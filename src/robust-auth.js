@@ -41,7 +41,7 @@ module.exports = function construct(config, dal, encryption, logger) {
   if (config.secret.length < 14) throw "robust-auth: your secret must be longer than 14 characters in length.";
 
   if (config.attachEndpoints) {
-    _.extend(config.routesNotRequiringAuthentication, defaultRoutesNotRequiringAuthentication);
+
   }
 
   if (!dal.create) throw 'robust-auth: dal.create must exist and return a promise.';
