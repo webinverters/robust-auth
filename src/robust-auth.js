@@ -50,10 +50,11 @@ module.exports = function construct(config, dal, encryption, logger) {
 
   function authenticate(req, res) {
     return m.authenticate(req.body.key, req.body.secret)
-      .then(function(token) {
-        if (token) {
+      .then(function(user) {
+        if (user) {
           res.send({
-            token: token
+            id: user.id,
+            token: user.token
           });
         } else {
           res.status(401).send();
@@ -64,8 +65,8 @@ module.exports = function construct(config, dal, encryption, logger) {
   m.authenticate = function(userId, pass) {
     return dal.getUserTokenInfo(userId).then(function (user) {
       if (m.validatePassword(pass, user.secretHash)) {
-        var token = m.createUserToken(user);
-        return token;
+        user.token = m.createUserToken(user);
+        return user;
       } else {
         return null;
       }
@@ -103,13 +104,12 @@ module.exports = function construct(config, dal, encryption, logger) {
     user.secretHash = encryption.encode(user.password || user.secret, config.secret);
     delete user.password;
     delete user.secret;
-    return dal.create('user', user)
+    return dal.addAuthUser(user)
       .catch(function(err) {
-        logger.logError('robust-auth: failed to register a new user.  "dal.create"', err);
+        logger.logError('robust-auth: failed to register a new user.  "dal.addAuthUser"', err);
         throw err;
       });
   };
-
 
   m.isPublicRoute = function(path) {
     _.each(config.authenticatedRoutes, function(val, key) {
@@ -165,10 +165,10 @@ module.exports = function construct(config, dal, encryption, logger) {
   }
 
   m.deleteUser = function(userId) {
-    return dal.delete('user', userId)
+    return dal.deleteUser(userId)
       .catch(function(err) {
         logger.logError('Failed to delete user.', err);
-        throw 'robust-auth: there was an error in a dal method "dal.delete".  This is code you are responsible for.';
+        throw 'robust-auth: there was an error in a dal method "dal.deleteUser".  This is code you are responsible for.';
       });
   };
 
@@ -198,7 +198,7 @@ module.exports = function construct(config, dal, encryption, logger) {
     // allow cross origin requests
     if (opts.attachEndpoints) {
       app.post('/token', authenticate);
-      app.delete('/user', deleteUser);
+      //app.delete('/user', deleteUser);  // TODO must secure this endpoint.
       app.post('/user', registerUser);
     }
 
