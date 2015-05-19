@@ -53,7 +53,7 @@ module.exports = function construct(config, dal, encryption, logger) {
       .then(function(user) {
         if (user) {
           res.send({
-            id: user.id,
+            id: user.userId,
             token: user.token
           });
         } else {
