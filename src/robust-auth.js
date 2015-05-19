@@ -44,9 +44,9 @@ module.exports = function construct(config, dal, encryption, logger) {
 
   }
 
-  if (!dal.create) throw 'robust-auth: dal.create must exist and return a promise.';
+  if (!dal.addAuthUser) throw 'robust-auth: dal.create must exist and return a promise.';
   if (!dal.getUserTokenInfo) throw 'robust-auth: dal.getUserTokenInfo must exist and return a promise.';
-  if (!dal.delete) throw 'robust-auth: dal.delete must exist and return a promise.';
+  if (!dal.deleteUser) throw 'robust-auth: dal.delete must exist and return a promise.';
 
   function authenticate(req, res) {
     return m.authenticate(req.body.key, req.body.secret)
