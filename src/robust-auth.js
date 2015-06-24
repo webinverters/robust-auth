@@ -64,6 +64,7 @@ module.exports = function construct(config, dal, encryption, logger) {
 
   m.authenticate = function(userId, pass) {
     return dal.getUserTokenInfo(userId).then(function (user) {
+      if (!user) return null;
       if (m.validatePassword(pass, user.secretHash)) {
         user.token = m.createUserToken(user);
         return user;
