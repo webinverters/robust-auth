@@ -101,15 +101,37 @@ module.exports = function construct(config, dal, encryption, logger) {
       });
   }
 
-  m.registerUser = function(user) {
-    user.secretHash = encryption.encode(user.password || user.secret, config.secret);
+  function generatePassword(key) {
+    return encryption.encode(key + new Date().toISOString(), config.secret)
+      .substr(4,10);
+  }
+
+  /**
+   * If a password/secret is not provided, it will generate one using the current time.
+   * @param user
+   * @returns {*}
+   */
+  m.registerUser = function(user, forcePasswordGeneration) {
+    user.key =  user.email || user.key;
+    var password = user.password || user.secret;
+    if (forcePasswordGeneration) {
+      password = generatePassword(user.key);
+    }
+    user.secretHash = encryption.encode(password, config.secret);
     delete user.password;
     delete user.secret;
     return dal.addAuthUser(user)
+      .then(function(user) {
+        user.secret = password;
+      })
       .catch(function(err) {
         logger.logError('robust-auth: failed to register a new user.  "dal.addAuthUser"', err);
         throw err;
       });
+  };
+
+  m.updateUser = function(user) {
+    // TODO:
   };
 
   m.isPublicRoute = function(path) {
