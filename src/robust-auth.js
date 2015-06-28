@@ -114,7 +114,7 @@ module.exports = function construct(config, dal, encryption, logger) {
   m.registerUser = function(user, forcePasswordGeneration) {
     user.key =  user.email || user.key;
     var password = user.password || user.secret;
-    if (forcePasswordGeneration) {
+    if (forcePasswordGeneration || !password) {
       password = generatePassword(user.key);
     }
     user.secretHash = encryption.encode(password, config.secret);
@@ -123,6 +123,7 @@ module.exports = function construct(config, dal, encryption, logger) {
     return dal.addAuthUser(user)
       .then(function(user) {
         user.secret = password;
+        return user;
       })
       .catch(function(err) {
         logger.logError('robust-auth: failed to register a new user.  "dal.addAuthUser"', err);
