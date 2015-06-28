@@ -102,8 +102,7 @@ module.exports = function construct(config, dal, encryption, logger) {
   }
 
   function generatePassword(key) {
-    return encryption.encode(key + new Date().toISOString(), config.secret)
-      .substr(4,10);
+    return encryption.encode(key + new Date().toISOString(), config.secret).substr(-10);
   }
 
   /**
@@ -123,6 +122,7 @@ module.exports = function construct(config, dal, encryption, logger) {
     return dal.addAuthUser(user)
       .then(function(result) {
         user.secret = password;
+        delete user.secretHash;
         return user;
       })
       .catch(function(err) {
