@@ -121,7 +121,7 @@ module.exports = function construct(config, dal, encryption, logger) {
     delete user.password;
     delete user.secret;
     return dal.addAuthUser(user)
-      .then(function(user) {
+      .then(function(result) {
         user.secret = password;
         return user;
       })
