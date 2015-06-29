@@ -157,7 +157,8 @@ module.exports = function construct(config, dal, encryption, logger) {
 
     if (req.headers['token']) {
       try {
-        req.session.user = req.user = encryption.decode(req.headers['token'], config.secret);
+        req.user = encryption.decode(req.headers['token'], config.secret);
+        req.session = { user: req.user };
         if (!req.user.id) throw 'AUTH FAILED:USER HAS NO MEMBER: id';
         if (!req.user.tokenExpiry || req.user.tokenExpiry <= new Date().getTime()) {
           logger.log('Expired Token:', req.user);
@@ -171,7 +172,8 @@ module.exports = function construct(config, dal, encryption, logger) {
         logger.logError('Unexpectedly could not decode a token.', ex);
         res.status(401).send();
         // ensure no user is authenticated.
-        req.session.user = req.user = null;
+        req.user = null;
+        req.session = { user: null };
       }
     } else {
       //logger.debug('Checking permissions to ', req.path);
