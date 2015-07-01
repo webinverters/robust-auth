@@ -69,17 +69,25 @@ module.exports = function construct(config, dal, encryption, logger) {
         if (!user.id) user.id = user.userId;
         user.token = m.createUserToken(user);
         if (dal.recordLastLogin) {
-          dal.recordLastLogin(userId);
+          dal.recordLastLogin(user.userId)
+            .catch(function (err) {
+              logger.error('Failed to record last login date.', err);
+            });
         }
         if (dal.recordFailedLoginAttempt) {
-          dal.recordFailedLoginAttempt(userId, 0);
+          dal.recordFailedLoginAttempt(user.userId, 0)
+            .catch(function (err) {
+              logger.error('Failed to record failed login attempt.', err);
+            });
         }
         return user;
       } else {
         if (dal.recordFailedLoginAttempt) {
-          dal.recordFailedLoginAttempt(userId, (user.loginAttempts || 0)+1);
+          dal.recordFailedLoginAttempt(user.userId, (user.loginAttempts || 0) + 1)
+            .catch(function (err) {
+              logger.error('Failed to record failed login attempt.', err);
+            });
         }
-        return null;
       }
     });
   };
