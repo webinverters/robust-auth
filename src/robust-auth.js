@@ -68,8 +68,17 @@ module.exports = function construct(config, dal, encryption, logger) {
       if (m.validatePassword(pass, user.secretHash)) {
         if (!user.id) user.id = user.userId;
         user.token = m.createUserToken(user);
+        if (dal.recordLastLogin) {
+          dal.recordLastLogin(userId);
+        }
+        if (dal.recordFailedLoginAttempt) {
+          dal.recordFailedLoginAttempt(userId, 0);
+        }
         return user;
       } else {
+        if (dal.recordFailedLoginAttempt) {
+          dal.recordFailedLoginAttempt(userId, user.loginAttempts+1);
+        }
         return null;
       }
     });
@@ -167,7 +176,6 @@ module.exports = function construct(config, dal, encryption, logger) {
         req.user = null;
         req.session = { user: null };
       }
-      log('USER:', req.user);
       if (!req.user.id) throw 'AUTH FAILED:USER HAS NO MEMBER: id';
       if (!req.user.tokenExpiry || req.user.tokenExpiry <= new Date().getTime()) {
         logger.log('Expired Token:', req.user);
