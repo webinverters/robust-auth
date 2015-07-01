@@ -77,7 +77,7 @@ module.exports = function construct(config, dal, encryption, logger) {
         return user;
       } else {
         if (dal.recordFailedLoginAttempt) {
-          dal.recordFailedLoginAttempt(userId, user.loginAttempts+1);
+          dal.recordFailedLoginAttempt(userId, (user.loginAttempts || 0)+1);
         }
         return null;
       }
