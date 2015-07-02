@@ -34,7 +34,8 @@ module.exports = function construct(config, dal, encryption, logger) {
     attachMiddleware: true,
     secret: null,  // purposely do not set a default so the security is not weakened by user's forgetting to change the default.
     authenticatedRoutes: {},
-    tokenExpireDurationSecs: 60*60*24*1 // one day by default.
+    tokenExpireDurationSecs: 60*60*24*1, // one day by default.
+    failedAttemptsLockoutCount: 10
   });
 
   if (!config.secret) throw "robust-auth: you must specify a secret key if you plan to win.";
@@ -51,7 +52,13 @@ module.exports = function construct(config, dal, encryption, logger) {
   function authenticate(req, res) {
     return m.authenticate(req.body.key, req.body.secret)
       .then(function(user) {
-        if (user) {
+        if (user == 'locked') {
+          res.status(401).send({
+            status: "Error",
+            message: config.lockedMessage || "Account Locked.  Please contact an administrator."
+          });
+        }
+        else if (user) {
           res.send({
             id: user.userId,
             token: user.token
@@ -65,6 +72,8 @@ module.exports = function construct(config, dal, encryption, logger) {
   m.authenticate = function(userId, pass) {
     return dal.getUserTokenInfo(userId).then(function (user) {
       if (!user) return null;
+      if (user.locked) return 'locked';
+
       if (m.validatePassword(pass, user.secretHash)) {
         if (!user.id) user.id = user.userId;
         user.token = m.createUserToken(user);
@@ -87,6 +96,11 @@ module.exports = function construct(config, dal, encryption, logger) {
             .catch(function (err) {
               logger.error('Failed to record failed login attempt.', err);
             });
+
+          if ((user.loginAttempts || 0) + 1 > config.failedAttemptsLockoutCount) {
+            // unlocking must be implemented by the application due to authorization.
+            if (dal.lockAccount) return dal.lockAccount(user.userId);
+          }
         }
       }
     });
@@ -123,6 +137,18 @@ module.exports = function construct(config, dal, encryption, logger) {
     return encryption.encode(key + new Date().toISOString(), config.secret).substr(-10);
   }
 
+  m.resetPassword = function(key) {
+    var newSecret = generatePassword(key);
+    return dal.updateUser(key, {secretHash: encryption.encode(newSecret, config.secret)})
+      .then(function() {
+        return newSecret;
+      })
+      .catch(function(err) {
+        logger.error('Failed to reset password.', err);
+        throw err;
+      });
+  };
+
   /**
    * If a password/secret is not provided, it will generate one using the current time.
    * @param user
@@ -149,9 +175,10 @@ module.exports = function construct(config, dal, encryption, logger) {
       });
   };
 
-  m.updateUser = function(user) {
-    // TODO:
-  };
+  //m.updateUser = function(user) {
+  //  Support changing the primary email address.
+  // Actually, do to authorization concerns, this needs to be implemented by the application.
+  //};
 
   m.isPublicRoute = function(path) {
     _.each(config.authenticatedRoutes, function(val, key) {
