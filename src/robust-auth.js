@@ -60,10 +60,10 @@ module.exports = function construct(config, dal, encryption, logger) {
           });
         }
         else if (user) {
-          res.send({
+          res.send(_.extend(user, {
             id: user.userId,
             token: user.token
-          });
+          }, {secretHash: ''}));
         } else {
           res.status(401).send();
         }
