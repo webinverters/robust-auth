@@ -22,7 +22,7 @@ var _ = require('lodash');
  * @param logger
  * @returns {{}}
  */
-module.exports = function construct(config, dal, encryption, logger) {
+module.exports = function construct(config, logger, dal, encryption) {
   var m = {};
 
   encryption = encryption || require('jwt-simple');
@@ -41,10 +41,6 @@ module.exports = function construct(config, dal, encryption, logger) {
   if (!config.secret) throw "robust-auth: you must specify a secret key if you plan to win.";
   if (config.secret.length < 14) throw "robust-auth: your secret must be longer than 14 characters in length.";
 
-  if (config.attachEndpoints) {
-
-  }
-
   if (!dal.addAuthUser) throw 'robust-auth: dal.create must exist and return a promise.';
   if (!dal.getUserTokenInfo) throw 'robust-auth: dal.getUserTokenInfo must exist and return a promise.';
   if (!dal.deleteUser) throw 'robust-auth: dal.delete must exist and return a promise.';
@@ -60,10 +56,11 @@ module.exports = function construct(config, dal, encryption, logger) {
           });
         }
         else if (user) {
+          delete user.secretHash;
           res.send(_.extend(user, {
             id: user.userId,
             token: user.token
-          }, {secretHash: ''}));
+          }));
         } else {
           res.status(401).send();
         }
