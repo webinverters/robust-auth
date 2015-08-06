@@ -105,6 +105,10 @@ module.exports = function construct(config, logger, dal, encryption) {
   };
 
   m.validatePassword = function(password, hash) {
+    if (!password) {
+      return false;
+    }
+
     // use the same encryption for both jwt and passwords.
     if (encryption.encode(password, config.secret) == hash) {
       return true;
