@@ -35,7 +35,8 @@ module.exports = function construct(config, logger, dal, encryption) {
     secret: null,  // purposely do not set a default so the security is not weakened by user's forgetting to change the default.
     authenticatedRoutes: {},
     tokenExpireDurationSecs: 60*60*24*1, // one day by default.
-    failedAttemptsLockoutCount: 10
+    failedAttemptsLockoutCount: 10,
+    USER_ID_PROPERTY: 'userId'
   });
 
   if (!config.secret) throw "robust-auth: you must specify a secret key if you plan to win.";
@@ -58,7 +59,7 @@ module.exports = function construct(config, logger, dal, encryption) {
         else if (user) {
           delete user.secretHash;
           res.send(_.extend(user, {
-            id: user.userId,
+            id: user.userId || user[config.USER_ID_PROPERTY],
             token: user.token
           }));
         } else {
@@ -73,16 +74,16 @@ module.exports = function construct(config, logger, dal, encryption) {
       if (user.locked) return 'locked';
 
       if (m.validatePassword(pass, user.secretHash)) {
-        if (!user.id) user.id = user.userId;
+        if (!user.id) user.id = user[config.USER_ID_PROPERTY];
         user.token = m.createUserToken(user);
         if (dal.recordLastLogin) {
-          dal.recordLastLogin(user.userId)
+          dal.recordLastLogin(user.userId || user.id)
             .catch(function (err) {
               logger.error('Failed to record last login date.', err);
             });
         }
         if (dal.recordFailedLoginAttempt) {
-          dal.recordFailedLoginAttempt(user.userId, 0)
+          dal.recordFailedLoginAttempt(user.userId || user.id, 0)
             .catch(function (err) {
               logger.error('Failed to record failed login attempt.', err);
             });
@@ -90,14 +91,14 @@ module.exports = function construct(config, logger, dal, encryption) {
         return user;
       } else {
         if (dal.recordFailedLoginAttempt) {
-          dal.recordFailedLoginAttempt(user.userId, (user.loginAttempts || 0) + 1)
+          dal.recordFailedLoginAttempt(user.userId || user.id, (user.loginAttempts || 0) + 1)
             .catch(function (err) {
               logger.error('Failed to record failed login attempt.', err);
             });
 
           if ((user.loginAttempts || 0) + 1 > config.failedAttemptsLockoutCount) {
             // unlocking must be implemented by the application due to authorization.
-            if (dal.lockAccount) return dal.lockAccount(user.userId);
+            if (dal.lockAccount) return dal.lockAccount(user.userId || user.id);
           }
         }
       }
