@@ -34,7 +34,7 @@ module.exports = function construct(config, logger, dal, encryption) {
     attachMiddleware: true,
     secret: null,  // purposely do not set a default so the security is not weakened by user's forgetting to change the default.
     authenticatedRoutes: {},
-    tokenExpireDurationSecs: 60*60*24*1, // one day by default.
+    tokenExpireDurationSecs: 1000*60*60*24*1, // 1 thousand days by default.
     failedAttemptsLockoutCount: 10,
     USER_ID_PROPERTY: 'userId'
   });
